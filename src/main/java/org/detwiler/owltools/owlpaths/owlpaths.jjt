@@ -1,0 +1,306 @@
+options {
+    IGNORE_CASE = false;
+    MULTI = true;
+    STATIC=false;
+    UNICODE_INPUT=true;
+    NODE_CLASS = "org.detwiler.owltools.owlpaths.util.PathNode";
+    //LOOKAHEAD = 2;
+    //FORCE_LA_CHECK = true;
+    VISITOR = true;
+}
+
+PARSER_BEGIN(PathExpression)
+package org.detwiler.owltools.owlpaths;
+import java.io.*;
+import org.detwiler.owltools.owlpaths.util.PathNode;
+import org.detwiler.owltools.owlpaths.util.PathExpressionElementVisitor;
+import org.detwiler.owltools.owlpaths.util.Qualifiers;
+import org.semanticweb.owlapi.model.IRI;
+import org.semanticweb.owlapi.model.*;
+import org.semanticweb.owlapi.reasoner.NodeSet;
+import org.semanticweb.owlapi.reasoner.OWLReasoner;
+import org.semanticweb.owlapi.search.EntitySearcher;
+import java.nio.charset.Charset;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+public class PathExpression {
+    private OWLReasoner reasoner;
+    private Pattern invPattern = Pattern.compile("^\\[INV=(.*)\\]$");
+    private Pattern supPattern = Pattern.compile("^\\[SUP=(.*)\\]$");
+
+    public PathExpression(OWLReasoner reasoner){
+        this.reasoner = reasoner;
+    }
+
+    public Set<OWLClass> processPath(String pathExpr, Set<OWLClass> subjClses){
+        Set<OWLClass> results = new HashSet<OWLClass>();
+
+        // feed expression to this object
+        SimpleCharStream charstream = new SimpleCharStream(new StringReader(pathExpr));
+        PathExpressionTokenManager petm = new PathExpressionTokenManager(charstream);
+        this.ReInit(petm);
+
+        try {
+          PathNode start = this.Start();
+          start.dump("");
+          results = (Set<OWLClass>)start.jjtAccept(new PathExpressionElementVisitor(reasoner),subjClses);
+          //System.out.println();
+          //n.dump("");
+          System.out.println("Thank you.");
+        } catch (Exception e) {
+          System.out.println("Oops.");
+          System.out.println(e.getMessage());
+          e.printStackTrace();
+        }
+
+        return results;
+    }
+
+    public static void main(String[] args) {
+        ByteArrayInputStream str = new ByteArrayInputStream(args[0].getBytes());
+        PathExpression t = new PathExpression(str);
+        try {
+          PathNode n = t.Start();
+          //System.out.println(n.jjtAccept(new PathExpressionDefaultVisitor(),null));
+          n.dump("");
+          System.out.println("Thank you.");
+        } catch (Exception e) {
+          System.out.println("Oops.");
+          System.out.println(e.getMessage());
+          e.printStackTrace();
+        }
+    }
+
+}
+
+PARSER_END(PathExpression)
+
+SKIP :
+{
+  " "
+| "\t"
+| "\n"
+| "\r"
+}
+
+TOKEN :
+{
+  < LGROUP: "(" >
+| < RGROUP: ")" >
+| < LANGLE: "<" >
+| < RANGLE: ">" >
+| < COLON: ":" >
+| < CONCAT: "/" >
+| < ALT: "|" >
+| < STAR: "*" >
+| < PLUS: "+" >
+| < OPT: "?" >
+//| < PROPERTY : <FULL_URI>|<PREFIX_URI>(<INV_FILTER>)?(<SUP_FILTER>)? > // TODO: TESTING
+//| < PROPERTY: "<"<FULL_URI>">" >//|<PREFIX_URI> > //(<INV_FILTER>)?(<SUP_FILTER>)? >
+//| < FILTER: <SUP_FILTER> | <INV_FILTER>  >
+| < SUP_FILTER: "[SUP="(<URI_CHAR>)+"]" >
+| < INV_FILTER: "[INV="<PREFIX_URI>"]" >
+| < #URI_CHAR: ["A"-"Z","a"-"z","_","-","0"-"9",":","/"] | <URI_SPECIAL_CHAR> > //TODO add URI chars, create full_uri and prefix_uri
+| < #URI_SPECIAL_CHAR: ["-",".","_","~",":","/","?","#","@","!","$","&","'","(",")","*","+",",",";","="] >
+| < #PREF_URI_CHAR: ~["(",")","<",">","[","]",":","/","|","*","+","?"] >
+| < FULL_URI: <LANGLE>(<URI_CHAR>)+<RANGLE> >
+| < PREFIX_URI: (<PREF_URI_CHAR>)+<COLON>(<PREF_URI_CHAR>)+ >
+//| < NS_URI: <PREFIX>":"<
+//,"[","]","="
+//| < #ID_CHAR: ["A"-"Z","a"-"z","_","-","0"-"9"] >
+//| < #URI_CHAR: ~["[","]"] >
+//| < #PROPERTY_CHAR: ~["[","]"] >
+}
+
+PathNode Start() : {}
+{
+  	Expr()
+  	{ return jjtThis; }
+}
+
+
+void Expr() #void : {}
+{
+  	BinaryOpExpr()
+}
+
+void BinaryOpExpr()  : { Token t = null; }
+{
+	//UnaryOpExpr() [((t=<CONCAT>) BinaryOpExpr()) | ((t=<ALT>) BinaryOpExpr())]
+	UnaryOpExpr() ((t=<CONCAT>|t=<ALT>) BinaryOpExpr())? //UnaryOpExpr())+ //#BinaryOpExpr(>1)
+	////UnaryOpExpr() [((t=<CONCAT>) UnaryOpExpr())+ | ((t=<ALT>) UnaryOpExpr())+]
+	//[((t=<CONCAT>)|(t=<ALT>)) BinaryOpExpr()]
+	//[((t=<CONCAT>) BinaryOpExpr())+ | ((t=<ALT>) BinaryOpExpr())+]
+	{
+		if(t!=null)
+		{
+			jjtThis.setOperatorType(t.kind);
+			jjtThis.setOperator(t.image);
+		}
+	}
+}
+
+void PropertyExpr(): { Token t=null, i=null, s=null; }
+{
+    (FullIRIExpr()|PrefixIRIExpr())(i=<INV_FILTER>)?(s=<SUP_FILTER>)?
+    //(t=<PREFIX_URI>|<FULL_URI>)(i=<INV_FILTER>)?(s=<SUP_FILTER>)?
+    {
+        //System.err.println(t.kind);
+        if(i!=null)
+        {
+            String invQualExp = i.image;
+            String invPropIRI = null;
+            if(invQualExp!=null) {
+                Matcher invMatcher = invPattern.matcher(invQualExp);
+                if (invMatcher.find()) {
+                    invPropIRI = invMatcher.group(1);
+                    System.err.println("found inverse qualifier " + invPropIRI);
+                }
+            }
+            ((PathNode)jjtThis.jjtGetChild(0)).getQualifiers().setQualifier(Qualifiers.QualType.INV, invPropIRI);
+        }
+        if(s!=null)
+        {
+            String supQualExp = s.image;
+            String supClassIRI = null;
+            if(supQualExp!=null) {
+                Matcher supMatcher = supPattern.matcher(supQualExp);
+                if (supMatcher.find()) {
+                    supClassIRI = supMatcher.group(1);
+                    System.err.println("found superclass qualifier " + supClassIRI);
+                }
+            }
+            ((PathNode)jjtThis.jjtGetChild(0)).getQualifiers().setQualifier(Qualifiers.QualType.SUP, supClassIRI);
+        }
+    }
+}
+
+void FullIRIExpr() : { Token t=null; }
+{
+    (t=<FULL_URI>)
+    {
+        String trimmedIRIExpr = t.image.replaceAll("[<>]","");
+        IRI propertyIRI = IRI.create(trimmedIRIExpr);
+        if(propertyIRI.isIRI()){
+         System.err.println(propertyIRI+" is an IRI");
+         jjtThis.setOperator(trimmedIRIExpr);
+        }
+        else {
+         System.err.println(propertyIRI+" is NOT an IRI");
+        }
+    }
+}
+
+void PrefixIRIExpr() : { Token t=null; }
+{
+    (t=<PREFIX_URI>)
+    {
+        IRI propertyIRI = IRI.create(t.image);
+        if(propertyIRI.isIRI()){
+         System.err.println(propertyIRI+" is an IRI");
+         jjtThis.setOperator(t.image);
+        }
+        else {
+         System.err.println(propertyIRI+" is NOT an IRI");
+        }
+    }
+}
+
+/*
+void PropertyExpr() : { Token t=null; }
+{
+    t=<PROPERTY> {
+        jjtThis.setOperator(t.image);
+    }
+    | t=<PROPERTY> <INV_FILTER> {
+        jjtThis.setOperator(t.image);
+    }
+    | t=<PROPERTY> <SUP_FILTER>{
+        jjtThis.setOperator(t.image);
+    }
+    | t=<PROPERTY> <INV_FILTER>{
+        jjtThis.setOperator(t.image);
+    }
+
+ */
+
+
+/*
+void PropertyExpr() : { Token t=null; }
+{
+    t=<PROPERTY> {
+        jjtThis.setOperator(t.image);
+    }
+    | t=<PROPERTY> <INV_FILTER> {
+        jjtThis.setOperator(t.image);
+    }
+    | t=<PROPERTY> <SUP_FILTER>{
+        jjtThis.setOperator(t.image);
+    }
+    | t=<PROPERTY> <INV_FILTER>{
+        jjtThis.setOperator(t.image);
+    }
+}
+ */
+
+/*
+void PropertyQualifier(): { Token t=null; }
+{
+    t=<PROPERTY> (<INV_FILTER>)? <SUP_FILTER>?
+}
+*/
+
+void UnaryOpExpr()  : { Token t = null; }
+{
+	SubExpr() (t=<STAR>|t=<PLUS>|t=<OPT>)? //#UnaryOpExpr(>1)
+	{
+		if(t!=null)
+		{
+			jjtThis.setOperatorType(t.kind);
+			jjtThis.setOperator(t.image);
+		}
+	}
+}
+
+void SubExpr() #void : {}
+{
+  	//<LGROUP>Expr()<RGROUP> | PropertyExpr()
+  	PropertyExpr() | (<LGROUP>Expr()<RGROUP>)
+}
+
+/*
+void SupProperty() : {Token t=null, s=null;}
+{
+    (t=<PROPERTY>)"[SUP="(s=<URI_CHAR>)+"]"
+	{
+        System.out.println("s = "+s.image);
+        jjtThis.setOperatorType(t.kind);
+    	jjtThis.setOperator(t.image);
+  	}
+}
+ */
+
+/*
+void Property() : { Token t = null;}
+{
+    //UnaryOpExpr() ((t=<CONCAT>|t=<ALT>) BinaryOpExpr())?
+    //<PROPERTY>("[SUP="(<URI_CHAR>)+"]")+
+	//(t=<PROPERTY>)(i=<INV_FILTER>)?(s=<SUP_FILTER>)?
+	(t=<PROPERTY>)
+	{
+     IRI propertyIRI = IRI.create(t.image);
+     if(propertyIRI.isIRI()){
+         System.err.println(propertyIRI+" is an IRI");
+     }
+     else {
+         System.err.println(propertyIRI+" is NOT an IRI");
+         jjtThis.setOperatorType(t.kind);
+         jjtThis.setOperator(t.image);
+     }
+    }
+}
+
+ */

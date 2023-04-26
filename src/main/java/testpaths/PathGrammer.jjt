@@ -1,0 +1,36 @@
+// SPARQL Property Path Grammar
+
+/*
+	ROOT:
+		pathElt
+
+	pathElt:
+		(propertyList | inversePath | sequencePath | alternativePath | zeroOrMorePath | oneOrMorePath | zeroOrOnePath)
+
+	propertyList:
+		(iri | variable) (',' (iri | variable))*
+
+	inversePath:
+		'^' (iri | variable)
+
+	sequencePath:
+		pathElt pathElt
+
+	alternativePath:
+		pathElt '|' pathElt
+
+	zeroOrMorePath:
+		pathElt '*'
+
+	oneOrMorePath:
+		pathElt '+'
+
+	zeroOrOnePath:
+		pathElt '?'
+
+	iri:
+		IRI_REF
+
+	variable:
+		VAR_NAME
+*/
