@@ -74,18 +74,6 @@ class PathExpressionTester {
                 factory.getOWLClass("http://www.semanticweb.org/detwiler/ontologies/2023/4/owlpathstest#ExampleTarget2")
         );
 
-        //[<http://www.semanticweb.org/detwiler/ontologies/2023/4/owlpathstest#ExampleTarget2>, <http://www.semanticweb.org/detwiler/ontologies/2023/4/owlpathstest#ExampleTarget1>, <http://www.semanticweb.org/detwiler/ontologies/2023/4/owlpathstest#ExampleSource>]
-
-        System.err.println("results = "+results);
-        for(OWLClassExpression result : results){
-            for(OWLAnnotation a : EntitySearcher.getAnnotations((OWLEntity) result, ontology, factory.getRDFSLabel()).collect(Collectors.toSet())) {
-                OWLAnnotationValue val = a.getValue();
-                if(val instanceof OWLLiteral) {
-                    System.out.println(result + " rdfs:label = " + ((OWLLiteral) val).getLiteral());
-                }
-            }
-        }
-
         assertEquals(expectedResults,results);
     }
 }

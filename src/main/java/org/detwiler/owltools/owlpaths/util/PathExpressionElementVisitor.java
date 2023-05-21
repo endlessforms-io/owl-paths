@@ -40,8 +40,6 @@ public class PathExpressionElementVisitor implements PathExpressionVisitor {
 
     @Override
     public Object visit(ASTStart node, Object data) {
-        System.out.println("starting now ...");
-        //return node.getClass().getExp().jjtAccept(this, data);
         PathNode child = (PathNode) node.jjtGetChild(0);
         return child.jjtAccept(this,data);
     }
@@ -142,7 +140,6 @@ public class PathExpressionElementVisitor implements PathExpressionVisitor {
         if(includeZero)
             results.addAll(subjClses);
 
-        // YOU ARE HERE!!!
         Set<OWLClassExpression> subjOfCurrIter = subjClses;
         while(!subjOfCurrIter.isEmpty()){
             subjOfCurrIter = (Set<OWLClassExpression>) pathNode.jjtAccept(this, subjOfCurrIter);
@@ -189,7 +186,7 @@ public class PathExpressionElementVisitor implements PathExpressionVisitor {
                             if (someExpr.getProperty().isNamed()) {
                                 if (someExpr.getProperty().getNamedProperty().getIRI().getIRIString().equals(propIRI)) {
                                     // add processing for properties with a target class constraint
-                                    OWLClassExpression currObj = filler; //************
+                                    OWLClassExpression currObj = filler;
                                     boolean satisfiesSup = true;
                                     if(objSupCls!=null){
                                         NodeSet<OWLClass> objSupClses = reasoner.getSuperClasses(currObj);//.collect(Collectors.toSet());
@@ -205,8 +202,6 @@ public class PathExpressionElementVisitor implements PathExpressionVisitor {
                                     // end processing for properties with a target class constraint
 
                                     return satisfiesSup && satisfiesInv;
-                                    //else
-                                    //return false;
                                 }
                             }
                         }
@@ -244,30 +239,6 @@ public class PathExpressionElementVisitor implements PathExpressionVisitor {
                 })
                 .collect(Collectors.toSet());
 
-        /*
-        Set<String> superClsIRIs = EntitySearcher.getSuperClasses(subjectClass, reasoner.getRootOntology())
-                .filter(expr -> {
-                    if (expr.getClassExpressionType().equals(ClassExpressionType.OBJECT_SOME_VALUES_FROM) ) {
-                        OWLObjectSomeValuesFrom someExpr = (OWLObjectSomeValuesFrom) expr;
-                        if (someExpr.getProperty().isNamed()) {
-                            return someExpr.getProperty().getNamedProperty().getIRI().getIRIString().equals(propIRI) &&
-                                    someExpr.getFiller().equals(objectClass);
-                        }
-                    }
-                    return false;
-                })
-                .map(expr -> {
-                    OWLObjectSomeValuesFrom someExpr = (OWLObjectSomeValuesFrom) expr;
-                    OWLClassExpression filler = someExpr.getFiller();
-                    if(filler.isNamed())
-                        return filler.asOWLClass().getIRI().getIRIString();
-                    return filler.toString();
-                })
-                .collect(Collectors.toSet());
-
-         */
-
-        //return !superClsIRIs.isEmpty();
         return !superClses.isEmpty();
     }
 }
