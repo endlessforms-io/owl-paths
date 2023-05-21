@@ -1,0 +1,131 @@
+options {
+    IGNORE_CASE = false;
+    MULTI = true;
+    STATIC=false;
+    UNICODE_INPUT=true;
+    NODE_CLASS = "org.detwiler.owltools.owlpaths2.util.PathNode";
+    //LOOKAHEAD = 3;
+    //FORCE_LA_CHECK = true;
+    VISITOR = true;
+}
+
+PARSER_BEGIN(PathExpression)
+
+/**
+ * An OWLPaths path expression parser.
+ */
+package org.detwiler.owltools.owlpaths2;
+import java.io.*;
+import org.detwiler.owltools.owlpaths2.util.PathNode;
+public class PathExpression {
+
+  /** Main entry point. */
+  public static void main(String args[]) {
+    System.out.println("Reading from standard input...");
+    PathExpression t = new PathExpression(System.in);
+    try {
+      PathNode n = t.Start();
+      n.dump("");
+      System.out.println("Thank you.");
+    } catch (Exception e) {
+      System.out.println("Oops.");
+      System.out.println(e.getMessage());
+      e.printStackTrace();
+    }
+  }
+}
+
+PARSER_END(PathExpression)
+
+SKIP :
+{
+  " "
+| "\t"
+| "\n"
+| "\r"
+}
+
+TOKEN :
+{
+  < LGROUP: "(" >
+| < RGROUP: ")" >
+| < LANGLE: "<" >
+| < RANGLE: ">" >
+| < COLON: ":" >
+| < CONCAT: "/" >
+| < ALT: "|" >
+| < STAR: "*" >
+| < PLUS: "+" >
+| < OPT: "?" >
+| < PROPERTY: (<URI_CHAR>)+ >
+| < SUP_FILTER: "[SUP="(<URI_CHAR>)+"]" >
+| < INV_FILTER: "[INV="(<URI_CHAR>)+"]" >
+| < URI_CHAR: ["A"-"Z","a"-"z","_","-","0"-"9",":","/"] > //TODO add URI chars, create full_uri and prefix_uri
+| < URI: "<"(<URI_CHAR>)+">" >
+}
+
+PathNode Start() : {}
+{
+  	OWLPathsExpr()
+  	{ return jjtThis; }
+}
+
+
+void OWLPathsExpr() #void : {}
+{
+  	PropertyPath()
+        //| InversePath()
+        | SequencePath()
+        | AlternativePath()
+        | ZeroOrMorePath()
+        | OneOrMorePath()
+        | ZeroOrOnePath()
+        //| NegatedPropertySetPath()
+}
+
+void PropertyPath() : {}
+{
+    IRIref()
+}
+
+/*
+InversePath:
+    '^' PropertyPath
+
+ */
+
+void SequencePath() : {}
+{
+    PropertyPath() <CONCAT> PropertyPath()
+}
+
+void AlternativePath() : {}
+{
+    PropertyPath() <ALT> PropertyPath()
+}
+
+void ZeroOrMorePath() : {Token t;}
+{
+    PropertyPath() (t=<STAR>)
+    {
+        jjtThis.jjtSetValue(t.image);
+    }
+}
+
+void OneOrMorePath() : {}
+{
+    PropertyPath() <PLUS>
+}
+
+void ZeroOrOnePath() : {}
+{
+    PropertyPath() <OPT>
+}
+
+void IRIref() : {Token t;}
+{
+  t=<URI>
+  {
+    jjtThis.jjtSetValue(t.image);
+  }
+}

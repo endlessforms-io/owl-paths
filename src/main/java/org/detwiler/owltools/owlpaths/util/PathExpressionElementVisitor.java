@@ -1,36 +1,26 @@
 package org.detwiler.owltools.owlpaths.util;
 
-import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URLEncodedUtils;
 import org.detwiler.owltools.owlpaths.*;
-import org.eclipse.rdf4j.model.vocabulary.OWL;
-import org.semanticweb.owlapi.formats.PrefixDocumentFormat;
 import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.reasoner.NodeSet;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
 import org.semanticweb.owlapi.search.EntitySearcher;
-import org.semanticweb.owlapi.vocab.PrefixOWLOntologyFormat;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.charset.Charset;
-import java.util.*;
-import java.util.regex.Matcher;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class PathExpressionElementVisitor implements PathExpressionVisitor {
-    private OWLReasoner reasoner;
-    private OWLOntology ontology;
-    private OWLDataFactory factory;
-    private OWLOntologyManager manager;
+    private final OWLReasoner reasoner;
+    private final OWLOntology ontology;
+    private final OWLDataFactory factory;
+    private final OWLOntologyManager manager;
     private PrefixManager prefManager;
-    //private Map<String, String> prefix_map;
+    private final Pattern invPattern = Pattern.compile("^\\[INV=(.*)\\]$");
+    private final Pattern supPattern = Pattern.compile("^\\[SUP=(.*)\\]$");
 
-    //private String invPattern = "^\\[INV=(.*)\\]$";
-    //private String supPattern = "^\\[SUP=(.*)\\]$";
-    private Pattern invPattern = Pattern.compile("^\\[INV=(.*)\\]$");
-    private Pattern supPattern = Pattern.compile("^\\[SUP=(.*)\\]$");
+    //TODO: OWLClass to OWLClassExpression
 
     public PathExpressionElementVisitor(OWLReasoner reasoner) {
         this.reasoner = reasoner;
@@ -93,18 +83,6 @@ public class PathExpressionElementVisitor implements PathExpressionVisitor {
         Set<OWLClass> fullResults = (Set<OWLClass>)child.jjtAccept(this,data);
 
 
-        /*
-        Iterator<OWLClass> objectsIt = fullResults.iterator();
-        while(objectsIt.hasNext()){
-            OWLClass currObj = objectsIt.next();
-            if(invPropIRI != null) {
-                // check to see if inverse is populated
-                //if(containsRestriction(currObj, invPropIRI, child))
-            }
-        }
-
-         */
-
         return fullResults;
     }
 
@@ -139,10 +117,7 @@ public class PathExpressionElementVisitor implements PathExpressionVisitor {
         }
 
         boolean includeZero = false;
-        boolean isTransitive = false;
-        if(operator.equals("*")||operator.equals("+")){
-            isTransitive = true;
-        }
+        boolean isTransitive = operator.equals("*") || operator.equals("+");
 
         if(operator.equals("*")||operator.equals("?")){
             includeZero = true;
@@ -154,8 +129,6 @@ public class PathExpressionElementVisitor implements PathExpressionVisitor {
         if(isTransitive){
               return transitiveClosure(subjClses, child, includeZero);
         }
-        //TODO THIS IS UNFINISHED
-        //TODO: Handle operation
 
         Set<OWLClass> results = new HashSet<OWLClass>();
         if(includeZero)
@@ -164,35 +137,6 @@ public class PathExpressionElementVisitor implements PathExpressionVisitor {
         results.addAll(childResults);
         return results;
     }
-
-    /*
-    private void getQualifiers(PathNode node){
-        // YOU ARE HERE, deal with qualifiers TODO: move this to child processing functions
-        //TODO deal with qualifiers
-        String invQualExp = node.getInvQual();
-        String supQualExp = node.getSupQual();
-
-        //TODO: I'm going to have to change this so that I pass qualifiers with the property IRI,
-        // otherwise I won't be able to enforce the inv qualifier
-        String invPropIRI = null;
-        if(invQualExp!=null) {
-            Matcher invMatcher = invPattern.matcher(invQualExp);
-            if (invMatcher.find()) {
-                invPropIRI = invMatcher.group(1);
-                System.err.println("found inverse qualifier " + invPropIRI);
-            }
-        }
-        String supClassIRI = null;
-        if(supQualExp!=null) {
-            Matcher supMatcher = invPattern.matcher(supQualExp);
-            if (supMatcher.find()) {
-                supClassIRI = supMatcher.group(1);
-                System.err.println("found superclass qualifier " + supClassIRI);
-            }
-        }
-    }
-
-     */
 
     private Set<OWLClass> transitiveClosure(Set<OWLClass> subjClses, PathNode pathNode, boolean includeZero) {
         Set<OWLClass> results = new HashSet<OWLClass>();
@@ -224,42 +168,6 @@ public class PathExpressionElementVisitor implements PathExpressionVisitor {
 
     private Set<OWLClass> getObjects(Set<OWLClass> subjClses, String inPropIRI, Qualifiers quals) {
         Set<OWLClass> allObjClses = new HashSet<>();
-
-        /*
-        // add processing for properties with a target class constraint
-        String objSupIRI = null;
-        String tmpInvPropIRI = null;
-        int delInd = inPropIRI.length();
-        if(inPropIRI.contains("?")) {
-            delInd = inPropIRI.lastIndexOf("?");
-        }
-
-        String inPropQuery = null;
-        try {
-            URI inProp = new URI(inPropIRI);
-            inPropQuery = inProp.getQuery();
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
-        }
-        if(inPropQuery!=null){
-            List<NameValuePair> params = URLEncodedUtils.parse(inPropQuery, Charset.forName("UTF-8"));
-            for (NameValuePair param : params) {
-                //System.out.println(param.getName() + " : " + param.getValue());
-                if(param.getName().equals("sup")){
-                    objSupIRI = param.getValue();
-                }
-                else if(param.getName().equals("inv")){
-                    tmpInvPropIRI = param.getValue();
-                }
-            }
-        }
-
-        final String propIRI = inPropIRI.substring(0,delInd);
-        final OWLClass objSupCls = null!=objSupIRI?factory.getOWLClass(objSupIRI):null;
-        final String invPropIRI = tmpInvPropIRI;
-        // end processing for properties with a target class constraint
-
-         */
 
         // add processing for qualifiers
         final String propIRI = inPropIRI;
@@ -296,8 +204,7 @@ public class PathExpressionElementVisitor implements PathExpressionVisitor {
                                     }
                                     // end processing for properties with a target class constraint
 
-                                    if(satisfiesSup && satisfiesInv)
-                                        return true;
+                                    return satisfiesSup && satisfiesInv;
                                     //else
                                     //return false;
                                 }
@@ -323,10 +230,8 @@ public class PathExpressionElementVisitor implements PathExpressionVisitor {
                     if (expr.getClassExpressionType().equals(ClassExpressionType.OBJECT_SOME_VALUES_FROM) /*instanceof OWLObjectSomeValuesFrom*/) {
                         OWLObjectSomeValuesFrom someExpr = (OWLObjectSomeValuesFrom) expr;
                         if (someExpr.getProperty().isNamed()) {
-                            if (someExpr.getProperty().getNamedProperty().getIRI().getIRIString().equals(propIRI)&&
-                                    someExpr.getFiller().equals(objectClass)) {
-                                return true;
-                            }
+                            return someExpr.getProperty().getNamedProperty().getIRI().getIRIString().equals(propIRI) &&
+                                    someExpr.getFiller().equals(objectClass);
                         }
                     }
                     return false;
@@ -340,8 +245,6 @@ public class PathExpressionElementVisitor implements PathExpressionVisitor {
                 })
                 .collect(Collectors.toSet());
 
-        if(!superClsIRIs.isEmpty())
-            return true;
-        return false;
+        return !superClsIRIs.isEmpty();
     }
 }

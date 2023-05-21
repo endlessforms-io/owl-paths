@@ -1,0 +1,33 @@
+SPARQLPropertyPathExpr:
+    PropertyPath
+    | InversePath
+    | SequencePath
+    | AlternativePath
+    | ZeroOrMorePath
+    | OneOrMorePath
+    | ZeroOrOnePath
+    | NegatedPropertySetPath
+
+PropertyPath:
+    IRIref
+
+InversePath:
+    '^' PropertyPath
+
+SequencePath:
+    PropertyPath '/' PropertyPath
+
+AlternativePath:
+    PropertyPath '|' PropertyPath
+
+ZeroOrMorePath:
+    PropertyPath '*'
+
+OneOrMorePath:
+    PropertyPath '+'
+
+ZeroOrOnePath:
+    PropertyPath '?'
+
+NegatedPropertySetPath:
+    '!' '(' PropertyPath (',' PropertyPath)* ')'

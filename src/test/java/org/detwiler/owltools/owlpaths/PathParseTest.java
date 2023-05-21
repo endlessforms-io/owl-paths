@@ -49,7 +49,7 @@ public class PathParseTest {
         try {
             ontology = manager.loadOntologyFromOntologyDocument(ontFile);
         } catch (OWLOntologyCreationException e) {
-            e.printStackTrace();
+             e.printStackTrace();
             System.exit(-1);
         }
 
