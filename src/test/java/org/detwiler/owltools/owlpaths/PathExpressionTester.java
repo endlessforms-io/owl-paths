@@ -1,5 +1,9 @@
 package org.detwiler.owltools.owlpaths;
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
@@ -14,15 +18,20 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.TestInstance.*;
 
-class PathExpressionTest {
+@TestInstance(Lifecycle.PER_CLASS)
+class PathExpressionTester {
 
     private OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
     private OWLDataFactory factory = manager.getOWLDataFactory();
     private OWLOntology ontology = null;
     private OWLReasoner reasoner = null;
 
-    public PathExpressionTest(){
+    private OWLClass start = factory.getOWLClass("http://www.semanticweb.org/detwiler/ontologies/2023/4/owlpathstest#ExampleSource");
+
+    @BeforeAll
+    public void initAll(){
         // load ontology reasoner
         File ontFile = new File("ont/testont.owl");
 
@@ -42,21 +51,34 @@ class PathExpressionTest {
         reasoner = reasonerFactory.createReasoner(ontology);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
+    @DisplayName( "Path with * Test" )
     void processPath() {
         // set up subjects
-        OWLClass start = factory.getOWLClass("http://www.semanticweb.org/detwiler/ontologies/2023/4/owlpathstest#ExampleSource");
-        Set<OWLClass> subjects = new HashSet<>();
+        Set<OWLClassExpression> subjects = new HashSet<>();
         subjects.add(start);
 
         // process OWL paths
         String path = "test:ExampleProp1*";
         PathExpression pe = new PathExpression(reasoner);
-        Set<OWLClass> results = pe.processPath(path,subjects);
+        Set<OWLClassExpression> results = pe.processPath(path,subjects);
+
+        Set<OWLClassExpression> expectedResults = new HashSet<>();
+        expectedResults.add(
+                factory.getOWLClass("http://www.semanticweb.org/detwiler/ontologies/2023/4/owlpathstest#ExampleSource")
+        );
+        expectedResults.add(
+                factory.getOWLClass("http://www.semanticweb.org/detwiler/ontologies/2023/4/owlpathstest#ExampleTarget1")
+        );
+        expectedResults.add(
+                factory.getOWLClass("http://www.semanticweb.org/detwiler/ontologies/2023/4/owlpathstest#ExampleTarget2")
+        );
+
+        //[<http://www.semanticweb.org/detwiler/ontologies/2023/4/owlpathstest#ExampleTarget2>, <http://www.semanticweb.org/detwiler/ontologies/2023/4/owlpathstest#ExampleTarget1>, <http://www.semanticweb.org/detwiler/ontologies/2023/4/owlpathstest#ExampleSource>]
 
         System.err.println("results = "+results);
-        for(OWLClass result : results){
-            for(OWLAnnotation a : EntitySearcher.getAnnotations(result, ontology, factory.getRDFSLabel()).collect(Collectors.toSet())) {
+        for(OWLClassExpression result : results){
+            for(OWLAnnotation a : EntitySearcher.getAnnotations((OWLEntity) result, ontology, factory.getRDFSLabel()).collect(Collectors.toSet())) {
                 OWLAnnotationValue val = a.getValue();
                 if(val instanceof OWLLiteral) {
                     System.out.println(result + " rdfs:label = " + ((OWLLiteral) val).getLiteral());
@@ -64,5 +86,6 @@ class PathExpressionTest {
             }
         }
 
+        assertEquals(expectedResults,results);
     }
 }

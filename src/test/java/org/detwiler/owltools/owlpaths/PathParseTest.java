@@ -72,7 +72,7 @@ public class PathParseTest {
 
         // set up subjects 
         OWLClass biceps = factory.getOWLClass("http://purl.org/sig/ont/fma/fma37670");
-        Set<OWLClass> subjects = new HashSet<>();
+        Set<OWLClassExpression> subjects = new HashSet<>();
         subjects.add(biceps);
 
         // process OWL paths
@@ -81,11 +81,11 @@ public class PathParseTest {
         //String path = "(fma:regional_part[INV=fma:regional_part_of])?";
         //String path = "<http://purl.org/sig/ont/fma/constitutional_part>";//"fma:constitutional_part";
         PathExpression pe = new PathExpression(reasoner);
-        Set<OWLClass> results = pe.processPath(path,subjects);
+        Set<OWLClassExpression> results = pe.processPath(path,subjects);
 
         System.err.println("results = "+results);
-        for(OWLClass result : results){
-            for(OWLAnnotation a : EntitySearcher.getAnnotations(result, ontology, factory.getRDFSLabel()).collect(Collectors.toSet())) {
+        for(OWLClassExpression result : results){
+            for(OWLAnnotation a : EntitySearcher.getAnnotations((OWLEntity) result, ontology, factory.getRDFSLabel()).collect(Collectors.toSet())) {
                 OWLAnnotationValue val = a.getValue();
                 if(val instanceof OWLLiteral) {
                     System.out.println(result + " rdfs:label = " + ((OWLLiteral) val).getLiteral());

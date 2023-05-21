@@ -35,8 +35,8 @@ public class PathExpression {
         this.reasoner = reasoner;
     }
 
-    public Set<OWLClass> processPath(String pathExpr, Set<OWLClass> subjClses){
-        Set<OWLClass> results = new HashSet<OWLClass>();
+    public Set<OWLClassExpression> processPath(String pathExpr, Set<OWLClassExpression> subjClses){
+        Set<OWLClassExpression> results = new HashSet<OWLClassExpression>();
 
         // feed expression to this object
         SimpleCharStream charstream = new SimpleCharStream(new StringReader(pathExpr));
@@ -46,7 +46,7 @@ public class PathExpression {
         try {
           PathNode start = this.Start();
           start.dump("");
-          results = (Set<OWLClass>)start.jjtAccept(new PathExpressionElementVisitor(reasoner),subjClses);
+          results = (Set<OWLClassExpression>)start.jjtAccept(new PathExpressionElementVisitor(reasoner),subjClses);
           //System.out.println();
           //n.dump("");
           System.out.println("Thank you.");
