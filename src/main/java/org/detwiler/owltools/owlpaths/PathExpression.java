@@ -35,11 +35,8 @@ public class PathExpression/*@bgen(jjtree)*/implements PathExpressionTreeConstan
 
         try {
           PathNode start = this.Start();
-          start.dump("");
+          //start.dump("");
           results = (Set<OWLClassExpression>)start.jjtAccept(new PathExpressionElementVisitor(reasoner),subjClses);
-          //System.out.println();
-          //n.dump("");
-          System.out.println("Thank you.");
         } catch (Exception e) {
           System.out.println("Oops.");
           System.out.println(e.getMessage());
@@ -255,7 +252,7 @@ jjtree.closeNodeScope(jjtn000, true);
 String trimmedIRIExpr = t.image.replaceAll("[<>]","");
         IRI propertyIRI = IRI.create(trimmedIRIExpr);
         if(propertyIRI.isIRI()){
-         System.err.println(propertyIRI+" is an IRI");
+         //System.err.println(propertyIRI+" is an IRI");
          jjtn000.setOperator(trimmedIRIExpr);
         }
         else {
@@ -278,7 +275,7 @@ jjtree.closeNodeScope(jjtn000, true);
       jjtc000 = false;
 IRI propertyIRI = IRI.create(t.image);
         if(propertyIRI.isIRI()){
-         System.err.println(propertyIRI+" is an IRI");
+         //System.err.println(propertyIRI+" is an IRI");
          jjtn000.setOperator(t.image);
         }
         else {
@@ -291,51 +288,7 @@ if (jjtc000) {
     }
 }
 
-/*
-void PropertyExpr() : { Token t=null; }
-{
-    t=<PROPERTY> {
-        jjtThis.setOperator(t.image);
-    }
-    | t=<PROPERTY> <INV_FILTER> {
-        jjtThis.setOperator(t.image);
-    }
-    | t=<PROPERTY> <SUP_FILTER>{
-        jjtThis.setOperator(t.image);
-    }
-    | t=<PROPERTY> <INV_FILTER>{
-        jjtThis.setOperator(t.image);
-    }
-
- */
-
-
-/*
-void PropertyExpr() : { Token t=null; }
-{
-    t=<PROPERTY> {
-        jjtThis.setOperator(t.image);
-    }
-    | t=<PROPERTY> <INV_FILTER> {
-        jjtThis.setOperator(t.image);
-    }
-    | t=<PROPERTY> <SUP_FILTER>{
-        jjtThis.setOperator(t.image);
-    }
-    | t=<PROPERTY> <INV_FILTER>{
-        jjtThis.setOperator(t.image);
-    }
-}
- */
-
-/*
-void PropertyQualifier(): { Token t=null; }
-{
-    t=<PROPERTY> (<INV_FILTER>)? <SUP_FILTER>?
-}
-*/
-  final public 
-void UnaryOpExpr() throws ParseException {/*@bgen(jjtree) UnaryOpExpr */
+  final public void UnaryOpExpr() throws ParseException {/*@bgen(jjtree) UnaryOpExpr */
                         ASTUnaryOpExpr jjtn000 = new ASTUnaryOpExpr(JJTUNARYOPEXPR);
                         boolean jjtc000 = true;
                         jjtree.openNodeScope(jjtn000);Token t = null;

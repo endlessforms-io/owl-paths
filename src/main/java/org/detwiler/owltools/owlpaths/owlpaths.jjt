@@ -4,8 +4,6 @@ options {
     STATIC=false;
     UNICODE_INPUT=true;
     NODE_CLASS = "org.detwiler.owltools.owlpaths.util.PathNode";
-    //LOOKAHEAD = 2;
-    //FORCE_LA_CHECK = true;
     VISITOR = true;
 }
 
@@ -45,11 +43,8 @@ public class PathExpression {
 
         try {
           PathNode start = this.Start();
-          start.dump("");
+          //start.dump("");
           results = (Set<OWLClassExpression>)start.jjtAccept(new PathExpressionElementVisitor(reasoner),subjClses);
-          //System.out.println();
-          //n.dump("");
-          System.out.println("Thank you.");
         } catch (Exception e) {
           System.out.println("Oops.");
           System.out.println(e.getMessage());
@@ -98,9 +93,6 @@ TOKEN :
 | < STAR: "*" >
 | < PLUS: "+" >
 | < OPT: "?" >
-//| < PROPERTY : <FULL_URI>|<PREFIX_URI>(<INV_FILTER>)?(<SUP_FILTER>)? > // TODO: TESTING
-//| < PROPERTY: "<"<FULL_URI>">" >//|<PREFIX_URI> > //(<INV_FILTER>)?(<SUP_FILTER>)? >
-//| < FILTER: <SUP_FILTER> | <INV_FILTER>  >
 | < SUP_FILTER: "[SUP="(<URI_CHAR>)+"]" >
 | < INV_FILTER: "[INV="<PREFIX_URI>"]" >
 | < #URI_CHAR: ["A"-"Z","a"-"z","_","-","0"-"9",":","/"] | <URI_SPECIAL_CHAR> > //TODO add URI chars, create full_uri and prefix_uri
@@ -108,11 +100,6 @@ TOKEN :
 | < #PREF_URI_CHAR: ~["(",")","<",">","[","]",":","/","|","*","+","?"] >
 | < FULL_URI: <LANGLE>(<URI_CHAR>)+<RANGLE> >
 | < PREFIX_URI: (<PREF_URI_CHAR>)+<COLON>(<PREF_URI_CHAR>)+ >
-//| < NS_URI: <PREFIX>":"<
-//,"[","]","="
-//| < #ID_CHAR: ["A"-"Z","a"-"z","_","-","0"-"9"] >
-//| < #URI_CHAR: ~["[","]"] >
-//| < #PROPERTY_CHAR: ~["[","]"] >
 }
 
 PathNode Start() : {}
@@ -129,11 +116,7 @@ void Expr() #void : {}
 
 void BinaryOpExpr()  : { Token t = null; }
 {
-	//UnaryOpExpr() [((t=<CONCAT>) BinaryOpExpr()) | ((t=<ALT>) BinaryOpExpr())]
-	UnaryOpExpr() ((t=<CONCAT>|t=<ALT>) BinaryOpExpr())? //UnaryOpExpr())+ //#BinaryOpExpr(>1)
-	////UnaryOpExpr() [((t=<CONCAT>) UnaryOpExpr())+ | ((t=<ALT>) UnaryOpExpr())+]
-	//[((t=<CONCAT>)|(t=<ALT>)) BinaryOpExpr()]
-	//[((t=<CONCAT>) BinaryOpExpr())+ | ((t=<ALT>) BinaryOpExpr())+]
+	UnaryOpExpr() ((t=<CONCAT>|t=<ALT>) BinaryOpExpr())?
 	{
 		if(t!=null)
 		{
@@ -146,7 +129,6 @@ void BinaryOpExpr()  : { Token t = null; }
 void PropertyExpr(): { Token t=null, i=null, s=null; }
 {
     (FullIRIExpr()|PrefixIRIExpr())(i=<INV_FILTER>)?(s=<SUP_FILTER>)?
-    //(t=<PREFIX_URI>|<FULL_URI>)(i=<INV_FILTER>)?(s=<SUP_FILTER>)?
     {
         //System.err.println(t.kind);
         if(i!=null)
@@ -185,7 +167,7 @@ void FullIRIExpr() : { Token t=null; }
         String trimmedIRIExpr = t.image.replaceAll("[<>]","");
         IRI propertyIRI = IRI.create(trimmedIRIExpr);
         if(propertyIRI.isIRI()){
-         System.err.println(propertyIRI+" is an IRI");
+         //System.err.println(propertyIRI+" is an IRI");
          jjtThis.setOperator(trimmedIRIExpr);
         }
         else {
@@ -200,7 +182,7 @@ void PrefixIRIExpr() : { Token t=null; }
     {
         IRI propertyIRI = IRI.create(t.image);
         if(propertyIRI.isIRI()){
-         System.err.println(propertyIRI+" is an IRI");
+         //System.err.println(propertyIRI+" is an IRI");
          jjtThis.setOperator(t.image);
         }
         else {
@@ -208,50 +190,6 @@ void PrefixIRIExpr() : { Token t=null; }
         }
     }
 }
-
-/*
-void PropertyExpr() : { Token t=null; }
-{
-    t=<PROPERTY> {
-        jjtThis.setOperator(t.image);
-    }
-    | t=<PROPERTY> <INV_FILTER> {
-        jjtThis.setOperator(t.image);
-    }
-    | t=<PROPERTY> <SUP_FILTER>{
-        jjtThis.setOperator(t.image);
-    }
-    | t=<PROPERTY> <INV_FILTER>{
-        jjtThis.setOperator(t.image);
-    }
-
- */
-
-
-/*
-void PropertyExpr() : { Token t=null; }
-{
-    t=<PROPERTY> {
-        jjtThis.setOperator(t.image);
-    }
-    | t=<PROPERTY> <INV_FILTER> {
-        jjtThis.setOperator(t.image);
-    }
-    | t=<PROPERTY> <SUP_FILTER>{
-        jjtThis.setOperator(t.image);
-    }
-    | t=<PROPERTY> <INV_FILTER>{
-        jjtThis.setOperator(t.image);
-    }
-}
- */
-
-/*
-void PropertyQualifier(): { Token t=null; }
-{
-    t=<PROPERTY> (<INV_FILTER>)? <SUP_FILTER>?
-}
-*/
 
 void UnaryOpExpr()  : { Token t = null; }
 {
@@ -267,40 +205,5 @@ void UnaryOpExpr()  : { Token t = null; }
 
 void SubExpr() #void : {}
 {
-  	//<LGROUP>Expr()<RGROUP> | PropertyExpr()
   	PropertyExpr() | (<LGROUP>Expr()<RGROUP>)
 }
-
-/*
-void SupProperty() : {Token t=null, s=null;}
-{
-    (t=<PROPERTY>)"[SUP="(s=<URI_CHAR>)+"]"
-	{
-        System.out.println("s = "+s.image);
-        jjtThis.setOperatorType(t.kind);
-    	jjtThis.setOperator(t.image);
-  	}
-}
- */
-
-/*
-void Property() : { Token t = null;}
-{
-    //UnaryOpExpr() ((t=<CONCAT>|t=<ALT>) BinaryOpExpr())?
-    //<PROPERTY>("[SUP="(<URI_CHAR>)+"]")+
-	//(t=<PROPERTY>)(i=<INV_FILTER>)?(s=<SUP_FILTER>)?
-	(t=<PROPERTY>)
-	{
-     IRI propertyIRI = IRI.create(t.image);
-     if(propertyIRI.isIRI()){
-         System.err.println(propertyIRI+" is an IRI");
-     }
-     else {
-         System.err.println(propertyIRI+" is NOT an IRI");
-         jjtThis.setOperatorType(t.kind);
-         jjtThis.setOperator(t.image);
-     }
-    }
-}
-
- */
