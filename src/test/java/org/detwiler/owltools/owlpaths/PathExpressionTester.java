@@ -52,6 +52,26 @@ class PathExpressionTester {
     }
 
     @Test
+    @DisplayName( "Path with just an IRI" )
+    void processSimpleIRIPath() {
+        // set up subjects
+        Set<OWLClassExpression> subjects = new HashSet<>();
+        subjects.add(start);
+
+        // process OWL paths
+        String path = "test:ExampleProp1";
+        PathExpression pe = new PathExpression(reasoner);
+        Set<OWLClassExpression> results = pe.processPath(path,subjects);
+
+        Set<OWLClassExpression> expectedResults = new HashSet<>();
+        expectedResults.add(
+                factory.getOWLClass("http://www.semanticweb.org/detwiler/ontologies/2023/4/owlpathstest#ExampleTarget1")
+        );
+
+        assertEquals(expectedResults,results);
+    }
+
+    @Test
     @DisplayName( "Path with * Test" )
     void processStarPath() {
         // set up subjects
