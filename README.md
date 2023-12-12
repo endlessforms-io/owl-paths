@@ -1,4 +1,4 @@
-# owl_paths
+# OWL Paths (owl_paths)
 
 OWL Paths is an add-on library, to be used in conjunction with the [OWLAPI](https://owlcs.github.io/owlapi/). It supports SPARQL-like path queries over class existential (someValuesFrom) networks in OWL.
 
