@@ -1,5 +1,7 @@
 # owl_paths
 
+OWL Paths is an add-on library, to be used in conjunction with the [OWLAPI](https://owlcs.github.io/owlapi/). It supports SPARQL-like path queries over class existential (someValuesFrom) networks in OWL.
+
 ## Pre-built jar file
 
 TODO: put link to jar file here (and description)
@@ -9,10 +11,11 @@ TODO: put link to jar file here (and description)
 Building this project requires Maven. If you do not already have Apache Maven and Java to first be installed and configured on your machine.
 
 Requirements:
-Java JDK version ?: (link to OpenJDK)
-Apache Maven: https://maven.apache.org/download.cgi (give version)
+* Java JDK version ?: (link to OpenJDK)
+* Apache Maven: https://maven.apache.org/download.cgi (give version)
 
 Example install on Mac with HomeBrew:
+
 'brew install mvn'
 
 Once you have installed the above requirements:
