@@ -4,7 +4,9 @@ OWL Paths is an add-on library, to be used in conjunction with the [OWLAPI](http
 
 ## Pre-built jar file
 
-TODO: put link to jar file here (and description)
+There is a built .jar file of this library in target/OWLPathsParser-1.0-SNAPSHOT.jar
+
+Note: this jar was built using ...
 
 ## Building from Source
 
